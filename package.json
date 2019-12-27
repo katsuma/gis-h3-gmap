@@ -5,11 +5,19 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "convert": "node src/converter.js public/data"
   },
   "dependencies": {
     "core-js": "^3.4.3",
-    "vue": "^2.6.10"
+    "csv": "^5.3.1",
+    "h3-js": "^3.6.3",
+    "iconv-lite": "^0.5.0",
+    "polygon-centroid": "^1.1.0",
+    "tokml": "^0.4.0",
+    "vue": "^2.6.10",
+    "vue2-google-maps": "^0.10.7",
+    "xml2js": "^0.4.23"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^4.1.0",
