@@ -15,6 +15,8 @@ const MAX_RESOLUTION = 7;
 const CODE_COLUMN = 0;
 const SKIP_COLUMN = 4;
 
+const MAX_OPACITY = 0.75;
+
 
 async function loadGeoKml(kmlPath) {
     const kml = await util.promisify(fs.readFile)(kmlPath);
@@ -46,7 +48,7 @@ async function parseStatsCsv(csvPath, h3Map) {
         const parser = csv.parse({from_line: 2}, (error, data) => {
             data.forEach((element, index) => {
                if (index == 0) {
-                    statsKeys = element.slice(SKIP_COLUMN).map(line => line.trim());
+                    statsKeys = element.slice(SKIP_COLUMN).map(line => line.trim()).map(line => line.replace(/[　 ]/, ''));
                     return;
                 }
 
@@ -87,7 +89,7 @@ function writeStatsKml(meshName, statsKeys, h3Stats, resolution, outDir) {
                     name: stat[statsKey],
                     description: h3index,
                     fill: "#ff0000",
-                    'fill-opacity': stat[statsKey] / maximum,
+                    'fill-opacity': MAX_OPACITY * stat[statsKey] / maximum,
                     'stroke-width': 1,
                 }
             };
