@@ -20,6 +20,7 @@
             <option value="5">5</option>
             <option value="6">6</option>
             <option value="7">7</option>
+            <option value="8">8</option>
           </select>
         </div>
         <div class='form-group'>
@@ -27,15 +28,27 @@
             Region:
           </label>
           <select class="form-control" v-model="region">
-            <option value="M5238">M5238</option>
-            <option value="M5239">M5239</option>
-            <option value="M5240">M5240</option>
-            <option value="M5338">M5338</option>
-            <option value="M5339">M5339</option>
-            <option value="M5340">M5340</option>
-            <option value="M5438">M5438</option>
-            <option value="M5439">M5439</option>
-            <option value="M5440">M5440</option>
+            <option value="832e29fffffffff">茨城県北部 (832e29fffffffff)</option>
+            <!-- <option value="832e2dfffffffff">千葉県銚子市 (832e2dfffffffff)</option> -->
+            <!-- <option value="832e64fffffffff">静岡県掛川市 (832e64fffffffff)</option> -->
+            <!-- <option value="832e66fffffffff">静岡県島田市 (832e66fffffffff)</option> -->
+            <option value="832e74fffffffff">群馬県・栃木県南部 (832e74fffffffff)</option>
+            <option value="832e75fffffffff">長野県東部 (832e75fffffffff)</option>
+            <option value="832f58fffffffff">房総半島・三浦半島 (832f58fffffffff)</option>
+            <option value="832f59fffffffff">静岡市・伊豆半島 (832f59fffffffff)</option>
+            <option value="832f5afffffffff">東京都心・千葉県 (832f5afffffffff)</option>
+            <option value="832f5bfffffffff">神奈川県・多摩地方 (832f5bfffffffff</option>
+            <!-- <option value="832f5efffffffff">千葉県いすみ市 (832f5efffffffff)</option> -->
+          </select>
+        </div>
+        <div class='form-group'>
+          <label>
+            Subregion:
+          </label>
+          <select class="form-control" v-model="subregion">
+            <template v-if="resolution == 8">
+              <option v-for="(h3index, index) in subregions" v-bind:key="index" v-bind:value="h3index">{{ h3index }}</option>
+            </template>
           </select>
         </div>
         <div class='form-group'>
@@ -88,7 +101,7 @@
         </div>
       </form>
       <hr/>
-      <button class='btn btn-success' style="marginTop: 10px'; width: '100%'" v-on:click="onSubmit">
+      <button class='btn btn-success' style="marginTop: 10px'; width: '100%'" v-bind:disabled="disableButton" v-on:click="onSubmit">
         Submit
       </button>
     </div>
@@ -96,24 +109,38 @@
 </template>
 
 <script>
+import { h3ToChildren } from 'h3-js';
+
 export default {
   name: 'app',
   data: function() {
     return {
-      publicPath: process.env.BASE_URL,
+      h3ToChildren: h3ToChildren,
       resolution: '5',
-      region: 'M5339',
+      region: '832f5afffffffff',
+      subregion: null,
       stats: '人口総数',
       kml: null,
-    }
+    };
   },
   mounted() {
-    this.onSubmit()
+    this.onSubmit();
+  },
+  computed: {
+    subregions: function() {
+      return h3ToChildren(this.region, 4);
+    },
+    disableButton: function() {
+      if (this.resolution != 8)
+        return false;
+      return this.subregions.filter(r => r == this.subregion).length == 0;
+    }
   },
   methods: {
     onSubmit() {
+      const region = this.resolution == 8? this.subregion: this.region;
       // const url = location.href + '/data/' + this.region + '/' + this.stats + '_' + this.resolution + '.kml';
-      const url = 'http://yumetaro.info/misc/map/' + '/data/' + this.region + '/' + this.stats + '_' + this.resolution + '.kml';
+      const url = 'http://yumetaro.info/misc/map/' + '/data/' + region + '/' + this.stats + '_' + this.resolution + '.kml';
       console.log(url);
 
       this.$refs.gmap.$mapPromise.then((map) => {
