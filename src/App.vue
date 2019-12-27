@@ -7,13 +7,21 @@
         :zoom="9"
         style="width: 100%; height: 100%;"
       >
+        <GmapInfoWindow
+          v-if="activeMarker"
+          :position="activeMarker.position"
+          @closeclick="activeMarker = null"
+        >
+          <div v-html="activeMarker.info"></div>
+        </GmapInfoWindow>
         <GmapMarker
           v-for="(marker, index) in markers"
           :key="index"
-          :label="marker.name"
+          :label="marker.label"
           :position="marker.position"
           :icon="marker.icon"
           :clickable="true"
+          @click="activeMarker = marker"
         />
       </GmapMap>
     </div>
@@ -108,18 +116,42 @@
           </select>
         </div>
       </form>
+      <button class="btn btn-success mt-2" style="width: 100%;" :disabled="disableButton" @click="onSubmit">
+        Submit
+      </button>
       <hr/>
       <form>
         <div class="form-group">
           <label>
-            CSV File:
+            Mart CSV:
           </label>
-          <input type="file" @change="onFileChange" />
+          <input type="file" @change="onMartChange" />
+          <br />
+          <div class="mt-2">
+            <input type="checkbox" value="Open" v-model="martFilter">
+            <label class="ml-1 mr-2">Open</label>
+            <input type="checkbox" value="Closed" v-model="martFilter">
+            <label class="ml-1 mr-2">Closed</label>
+            <input type="checkbox" value="Archived" v-model="martFilter">
+            <label class="ml-1 mr-2">Archived</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>
+            Collection CSV:
+          </label>
+          <input type="file" @change="onCollectionChange" />
+          <br />
+          <div class="mt-2">
+            <input type="checkbox" value="Open" v-model="collectionFilter">
+            <label class="ml-1 mr-2">Open</label>
+            <input type="checkbox" value="Closed" v-model="collectionFilter">
+            <label class="ml-1 mr-2">Closed</label>
+            <input type="checkbox" value="Archived" v-model="collectionFilter">
+            <label class="ml-1 mr-2">Archived</label>
+          </div>
         </div>
       </form>
-      <button class="btn btn-success" style="marginTop: 10px; width: 100%;" :disabled="disableButton" @click="onSubmit">
-        Submit
-      </button>
     </div>
   </div>
 </template>
@@ -130,21 +162,28 @@ import { gmapApi } from 'vue2-google-maps'
 
 const csv = require('csv-parser');
 
+import Marker from './domains/Marker.js';
+import MartLocation from './domains/MartLocation.js';
+import CollectionLocation from './domains/CollectionLocation.js';
+
 export default {
   name: 'app',
   data: function() {
     return {
-      resolution: '5',
+      resolution: '6',
       region: '832f5afffffffff',
       subregion: null,
       stats: '人口総数',
       kml: null,
-      markers: [],
+      marts: [],
+      collections: [],
+      martFilter: ['Open'],
+      collectionFilter: ['Open'],
+      activeMarker: null,
     };
   },
   mounted() {
     this.onSubmit();
-    console.dir(gmapApi);
   },
   computed: {
     subregions: function() {
@@ -154,13 +193,18 @@ export default {
       if (this.resolution != 8)
         return false;
       return this.subregions.filter(r => r == this.subregion).length == 0;
+    },
+    markers: function() {
+      return this.marts.filter(m => m.filter(this.martFilter)).concat(this.collections.filter(c => c.filter(this.collectionFilter)));
     }
   },
   methods: {
     onSubmit() {
       const region = this.resolution == 8? this.subregion: this.region;
-      // const url = location.href + '/data/' + this.region + '/' + this.stats + '_' + this.resolution + '.kml';
-      const url = 'http://yumetaro.info/misc/map/' + '/data/' + region + '/' + this.stats + '_' + this.resolution + '.kml';
+      const url = location.href + '/data/' + this.region + '/' + this.stats + '_' + this.resolution + '.kml';
+
+      // For development:
+      // const url = 'http://yumetaro.info/misc/map/' + '/data/' + region + '/' + this.stats + '_' + this.resolution + '.kml';
       console.log(url);
 
       this.$refs.gmap.$mapPromise.then((map) => {
@@ -174,33 +218,32 @@ export default {
         this.kml.setMap(map);
       });
     },
-    onFileChange(e) {
-      this.markers = [];
-
-      const file = e.target.files[0];
+    loadFile(event, callback) {
+      const file = event.target.files[0];
       if (!file)
           return;
 
       const stream = csv();
-      stream.on('data', (data) => {
-        if ('name' in data && 'lat' in data && 'lng' in data && 'color' in data)
-          this.markers.push({
-            name: data.name,
-            position: {
-              lat: parseFloat(data.lat),
-              lng: parseFloat(data.lng),
-            },
-            icon: {
-              url: 'http://maps.google.com/mapfiles/ms/icons/' + data.color + '-dot.png'
-            }
-          });
-      });
+      stream.on('data', callback);
 
       let reader = new FileReader();
-      reader.onload = (e) => {
-        stream.write(e.target.result);
+      reader.onload = (event) => {
+        stream.write(event.target.result);
       }
       reader.readAsText(file);
+
+    },
+    onMartChange(event) {
+      this.marts = [];
+      this.loadFile(event, (data) => {
+        this.marts.push(new MartLocation(data));
+      });
+    },
+    onCollectionChange(event) {
+      this.collections = [];
+      this.loadFile(event, (data) => {
+        this.collections.push(new CollectionLocation(data));
+      });
     }
   }
 }
@@ -225,7 +268,7 @@ html, body {
 }
 
 #menu {
-  width: 250px;
+  width: 280px;
   height: 100%;
   padding: 10px;
   flex-grow: 0;
