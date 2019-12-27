@@ -9,19 +9,19 @@ const iconv = require('iconv-lite');
 const tokml = require('tokml');
 const xml2js = require('xml2js');
 
-/*
-const TOP_RESOLUTION = 3;
-const MIN_RESOLUTION = 4;
-const MAX_RESOLUTION = 7;
-*/
-const TOP_RESOLUTION = 4;
-const MIN_RESOLUTION = 8;
-const MAX_RESOLUTION = 8;
+const TOP_RESOLUTION = 3;  // 親となる集計単位のH3解像度
+const MIN_RESOLUTION = 4;  // 出力対象のH3解像度の最小値
+const MAX_RESOLUTION = 7;  // 出力対象のH3解像度の最大値
 
-const CODE_COLUMN = 0;
-const SKIP_COLUMN = 4;
+// MEMO: 解像度が8になるとKMZの制限を超えるオブジェクト数になるので、集計単位を細かくする
+// const TOP_RESOLUTION = 4;
+// const MIN_RESOLUTION = 8;
+// const MAX_RESOLUTION = 8;
 
-const MAX_OPACITY = 0.75;
+const CODE_COLUMN = 0;  // 統計CSVでKEY_CODEが指定されている列番号
+const SKIP_COLUMN = 4;  // 統計CSVで統計データの収録が開始される列番号
+
+const MAX_OPACITY = 0.75;  // 最大値を持つ領域の表示に用いる透過率
 
 
 async function loadGeoKml(kmlPath) {
@@ -105,7 +105,7 @@ function writeStatsKml(meshName, statsKeys, h3Stats, resolution, outDir) {
             type: "FeatureCollection",
             features: geoFeatures,
         };
-        fs.writeFileSync(path.join(kmlDir, statsKey + '_' + resolution + '.json'), JSON.stringify(geoJson));
+        // fs.writeFileSync(path.join(kmlDir, statsKey + '_' + resolution + '.json'), JSON.stringify(geoJson));
 
         const kml = tokml(geoJson, {
             documentName: statsKey,
