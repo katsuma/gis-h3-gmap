@@ -11,6 +11,7 @@
   "dependencies": {
     "core-js": "^3.4.3",
     "csv": "^5.3.1",
+    "csv-parser": "^2.3.2",
     "h3-js": "^3.6.3",
     "iconv-lite": "^0.5.0",
     "polygon-centroid": "^1.1.0",
