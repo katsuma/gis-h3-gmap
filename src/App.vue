@@ -7,11 +7,19 @@
         :zoom="9"
         style="width: 100%; height: 100%;"
       >
+        <GmapMarker
+          v-for="(marker, index) in markers"
+          :key="index"
+          :label="marker.name"
+          :position="marker.position"
+          :icon="marker.icon"
+          :clickable="true"
+        />
       </GmapMap>
     </div>
     <div id="menu">
       <form> 
-        <div class='form-group'>
+        <div class="form-group">
           <label>
             Resolution:
           </label>
@@ -23,7 +31,7 @@
             <option value="8">8</option>
           </select>
         </div>
-        <div class='form-group'>
+        <div class="form-group">
           <label>
             Region:
           </label>
@@ -41,17 +49,17 @@
             <!-- <option value="832f5efffffffff">千葉県いすみ市 (832f5efffffffff)</option> -->
           </select>
         </div>
-        <div class='form-group'>
+        <div class="form-group">
           <label>
             Subregion:
           </label>
           <select class="form-control" v-model="subregion">
             <template v-if="resolution == 8">
-              <option v-for="(h3index, index) in subregions" v-bind:key="index" v-bind:value="h3index">{{ h3index }}</option>
+              <option v-for="(h3index, index) in subregions" :key="index" :value="h3index">{{ h3index }}</option>
             </template>
           </select>
         </div>
-        <div class='form-group'>
+        <div class="form-group">
           <label>
             Segment:
           </label>
@@ -101,7 +109,15 @@
         </div>
       </form>
       <hr/>
-      <button class='btn btn-success' style="marginTop: 10px'; width: '100%'" v-bind:disabled="disableButton" v-on:click="onSubmit">
+      <form>
+        <div class="form-group">
+          <label>
+            CSV File:
+          </label>
+          <input type="file" @change="onFileChange" />
+        </div>
+      </form>
+      <button class="btn btn-success" style="marginTop: 10px; width: 100%;" :disabled="disableButton" @click="onSubmit">
         Submit
       </button>
     </div>
@@ -110,21 +126,25 @@
 
 <script>
 import { h3ToChildren } from 'h3-js';
+import { gmapApi } from 'vue2-google-maps'
+
+const csv = require('csv-parser');
 
 export default {
   name: 'app',
   data: function() {
     return {
-      h3ToChildren: h3ToChildren,
       resolution: '5',
       region: '832f5afffffffff',
       subregion: null,
       stats: '人口総数',
       kml: null,
+      markers: [],
     };
   },
   mounted() {
     this.onSubmit();
+    console.dir(gmapApi);
   },
   computed: {
     subregions: function() {
@@ -153,6 +173,34 @@ export default {
         });
         this.kml.setMap(map);
       });
+    },
+    onFileChange(e) {
+      this.markers = [];
+
+      const file = e.target.files[0];
+      if (!file)
+          return;
+
+      const stream = csv();
+      stream.on('data', (data) => {
+        if ('name' in data && 'lat' in data && 'lng' in data && 'color' in data)
+          this.markers.push({
+            name: data.name,
+            position: {
+              lat: parseFloat(data.lat),
+              lng: parseFloat(data.lng),
+            },
+            icon: {
+              url: 'http://maps.google.com/mapfiles/ms/icons/' + data.color + '-dot.png'
+            }
+          });
+      });
+
+      let reader = new FileReader();
+      reader.onload = (e) => {
+        stream.write(e.target.result);
+      }
+      reader.readAsText(file);
     }
   }
 }
@@ -177,7 +225,7 @@ html, body {
 }
 
 #menu {
-  width: 200px;
+  width: 250px;
   height: 100%;
   padding: 10px;
   flex-grow: 0;

@@ -9,14 +9,14 @@ const iconv = require('iconv-lite');
 const tokml = require('tokml');
 const xml2js = require('xml2js');
 
+/*
 const TOP_RESOLUTION = 3;
 const MIN_RESOLUTION = 4;
 const MAX_RESOLUTION = 7;
-/*
+*/
 const TOP_RESOLUTION = 4;
 const MIN_RESOLUTION = 8;
 const MAX_RESOLUTION = 8;
-*/
 
 const CODE_COLUMN = 0;
 const SKIP_COLUMN = 4;
@@ -105,6 +105,7 @@ function writeStatsKml(meshName, statsKeys, h3Stats, resolution, outDir) {
             type: "FeatureCollection",
             features: geoFeatures,
         };
+        fs.writeFileSync(path.join(kmlDir, statsKey + '_' + resolution + '.json'), JSON.stringify(geoJson));
 
         const kml = tokml(geoJson, {
             documentName: statsKey,
